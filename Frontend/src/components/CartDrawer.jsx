@@ -1,14 +1,68 @@
-import React from 'react';
 import { useSelector, useDispatch } from 'react-redux';
-import { removeFromCart, updateQuantity, setCartOpen, clearCart } from '../redux/cartSlice';
+import { setCartOpen, setCartItems, mapCartItems } from '../redux/cartSlice';
 import { X, Trash2, Plus, Minus, ShoppingBasket, ArrowRight, ShieldCheck } from 'lucide-react';
 import Swal from 'sweetalert2';
+import { api } from '../authStorage';
 
 const CartDrawer = () => {
   const dispatch = useDispatch();
   const { items, isCartOpen } = useSelector((state) => state.cart);
 
-  const subtotal = items.reduce((sum, item) => sum + item.price * item.quantity, 0);
+  const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
+
+  const updateItem = async (item, quantity) => {
+    try {
+      const { data } = await api.patch(`/cart/items/${item.id}`, { quantity });
+      dispatch(setCartItems(mapCartItems(data.cart)));
+    } catch (error) {
+      console.error('Unable to update cart quantity.', error);
+      await Swal.fire({
+        title: 'Could not update basket',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    }
+  };
+
+  const removeItem = async (item) => {
+    try {
+      const { data } = await api.delete(`/cart/items/${item.id}`);
+      dispatch(setCartItems(mapCartItems(data.cart)));
+    } catch (error) {
+      console.error('Unable to remove cart item.', error);
+      await Swal.fire({
+        title: 'Could not remove item',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    }
+  };
+
+  const clearBasket = async (confirmCheckout = false) => {
+    try {
+      await api.delete('/cart/clear');
+      dispatch(setCartItems([]));
+      if (confirmCheckout) {
+        dispatch(setCartOpen(false));
+        await Swal.fire({
+          title: 'Basket checked out',
+          text: 'Your basket has been cleared successfully.',
+          icon: 'success',
+          confirmButtonColor: '#064e3b',
+        });
+      }
+    } catch (error) {
+      console.error('Unable to clear the FreshMarket cart.', error);
+      await Swal.fire({
+        title: 'Checkout unavailable',
+        text: error.response?.data?.message || 'Your basket could not be cleared. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    }
+  };
 
   if (!isCartOpen) return null;
 
@@ -62,23 +116,19 @@ const CartDrawer = () => {
                     {item.title}
                   </h4>
                   <p className="text-xs text-emerald-700 font-semibold mt-0.5">
-                    ${item.price.toFixed(2)} / <span className="text-gray-400 font-normal">{item.unit}</span>
+                    {Number.isFinite(item.price) ? `$${item.price.toFixed(2)}` : 'Price pending'} / <span className="text-gray-400 font-normal">{item.unit}</span>
                   </p>
 
                   <div className="flex items-center gap-2 mt-2">
                     <button
-                      onClick={() =>
-                        dispatch(updateQuantity({ id: item.id, quantity: item.quantity - 1 }))
-                      }
+                      onClick={() => item.quantity === 1 ? removeItem(item) : updateItem(item, item.quantity - 1)}
                       className="p-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition"
                     >
                       <Minus className="w-3.5 h-3.5" />
                     </button>
                     <span className="text-xs font-bold text-gray-800 px-2">{item.quantity}</span>
                     <button
-                      onClick={() =>
-                        dispatch(updateQuantity({ id: item.id, quantity: item.quantity + 1 }))
-                      }
+                      onClick={() => updateItem(item, item.quantity + 1)}
                       className="p-1 rounded-lg bg-emerald-50 text-emerald-800 hover:bg-emerald-100 transition"
                     >
                       <Plus className="w-3.5 h-3.5" />
@@ -88,13 +138,13 @@ const CartDrawer = () => {
 
                 <div className="text-right flex flex-col items-end justify-between self-stretch">
                   <button
-                    onClick={() => dispatch(removeFromCart(item.id))}
+                    onClick={() => removeItem(item)}
                     className="text-gray-300 hover:text-red-500 transition"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
                   <span className="text-sm font-black text-emerald-950">
-                    ${(item.price * item.quantity).toFixed(2)}
+                    {Number.isFinite(item.price) ? `$${(item.price * item.quantity).toFixed(2)}` : '—'}
                   </span>
                 </div>
               </div>
@@ -117,19 +167,13 @@ const CartDrawer = () => {
 
             <div className="flex gap-2">
               <button
-                onClick={() => dispatch(clearCart())}
+                onClick={() => clearBasket()}
                 className="py-3 px-4 border border-gray-200 hover:bg-red-50 hover:text-red-600 hover:border-red-200 text-gray-600 rounded-2xl text-xs font-bold transition"
               >
                 Clear
               </button>
               <button
-                onClick={() => Swal.fire({
-                  title: 'Done!',
-                  text: 'Grocery Order Placed Sucessfully',
-                  icon: 'success',
-                  confirmButtonText: 'Cool',
-                  confirmButtonColor: '#064e3b'
-                })}
+                onClick={() => clearBasket(true)}
                 className="flex-1 py-3 px-4 bg-emerald-900 hover:bg-emerald-800 text-amber-400 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 active:scale-95 transition"
               >
                 Proceed to Checkout <ArrowRight className="w-4 h-4 text-amber-400" />

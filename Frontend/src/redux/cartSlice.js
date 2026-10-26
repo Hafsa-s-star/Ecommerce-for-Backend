@@ -1,4 +1,11 @@
 import { createSlice } from '@reduxjs/toolkit';
+import { mapProduct } from './productsSlice';
+
+export function mapCartItems(cart = []) {
+  return cart
+    .filter((entry) => entry.product)
+    .map((entry) => ({ ...mapProduct(entry.product), quantity: entry.quantity }));
+}
 
 const cartSlice = createSlice({
   name: 'cart',
@@ -7,6 +14,9 @@ const cartSlice = createSlice({
     isCartOpen: false,
   },
   reducers: {
+    setCartItems: (state, action) => {
+      state.items = action.payload;
+    },
     addToCart: (state, action) => {
       const existingItem = state.items.find(item => item.id === action.payload.id);
       if (existingItem) {
@@ -41,5 +51,5 @@ const cartSlice = createSlice({
   },
 });
 
-export const { addToCart, removeFromCart, updateQuantity, clearCart, toggleCart, setCartOpen } = cartSlice.actions;
+export const { addToCart, removeFromCart, updateQuantity, clearCart, setCartItems, toggleCart, setCartOpen } = cartSlice.actions;
 export default cartSlice.reducer;

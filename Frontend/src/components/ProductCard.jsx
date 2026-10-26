@@ -1,16 +1,33 @@
 import React from 'react';
 import { useDispatch } from 'react-redux';
-import { addToCart } from '../redux/cartSlice';
+import { mapCartItems, setCartItems } from '../redux/cartSlice';
 import { Star, Plus, Check } from 'lucide-react';
+import { api } from '../authStorage';
+import Swal from 'sweetalert2';
 
 const ProductCard = ({ product }) => {
   const dispatch = useDispatch();
   const [added, setAdded] = React.useState(false);
+  const [isAdding, setIsAdding] = React.useState(false);
 
-  const handleAdd = () => {
-    dispatch(addToCart(product));
-    setAdded(true);
-    setTimeout(() => setAdded(false), 1200);
+  const handleAdd = async () => {
+    setIsAdding(true);
+    try {
+      const { data } = await api.post('/cart/items', { productId: product.id, quantity: 1 });
+      dispatch(setCartItems(mapCartItems(data.cart || data.updatedUser?.cart)));
+      setAdded(true);
+      setTimeout(() => setAdded(false), 1200);
+    } catch (error) {
+      console.error('Unable to add product to cart.', error);
+      await Swal.fire({
+        title: 'Could not add item',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    } finally {
+      setIsAdding(false);
+    }
   };
 
   return (
@@ -56,18 +73,25 @@ const ProductCard = ({ product }) => {
         <div className="mt-4 pt-3 border-t border-emerald-100/60 flex items-center justify-between">
           <div>
             <span className="text-[10px] text-gray-400 font-semibold uppercase tracking-wider block">Price</span>
-            <span className="text-xl font-black text-emerald-900">${product.price.toFixed(2)}</span>
+            <span className="text-xl font-black text-emerald-900">
+              {Number.isFinite(product.price) ? `$${product.price.toFixed(2)}` : 'Price pending'}
+            </span>
           </div>
 
           <button
             onClick={handleAdd}
+            disabled={isAdding || !Number.isFinite(product.price)}
             className={`flex items-center gap-1.5 px-4 py-2.5 rounded-2xl text-xs font-bold shadow-md transition-all active:scale-95 ${
-              added
+              isAdding
+                ? 'bg-emerald-700 text-white'
+                : added
                 ? 'bg-emerald-600 text-white shadow-emerald-200'
-                : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-emerald-900/10'
+                : 'bg-emerald-900 hover:bg-emerald-800 text-white shadow-emerald-900/10 disabled:cursor-not-allowed disabled:opacity-50'
             }`}
           >
-            {added ? (
+            {isAdding ? (
+              'Adding…'
+            ) : added ? (
               <>
                 <Check className="w-4 h-4" /> Added
               </>
