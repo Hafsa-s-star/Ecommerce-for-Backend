@@ -9,6 +9,7 @@ import { api, clearSession, storeSession } from './authStorage';
 import { ShoppingBasket, Truck, Award, RefreshCw, Leaf, MapPin, Clock3 } from 'lucide-react';
 import { setCategory, setProducts, mapProduct } from './redux/productsSlice';
 import { clearCart, mapCartItems, setCartItems } from './redux/cartSlice';
+import Swal from 'sweetalert2';
 import './App.css';
 
 function App() {
@@ -78,7 +79,12 @@ function App() {
       setAuthError('');
     } catch (error) {
       console.error('Unable to sign out of FreshMarket.', error);
-      window.alert(error.response?.data?.message || 'Could not sign out. Please try again.');
+      await Swal.fire({
+        title: 'Could not sign out',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
     }
   };
 

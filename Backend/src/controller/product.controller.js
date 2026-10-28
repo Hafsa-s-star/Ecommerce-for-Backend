@@ -111,7 +111,7 @@ export async function deleteProduct(req, res) {
 
 export async function getProduct(req, res) {
     try {
-        const products = await productModel.find().populate("admin", "username email");
+        const products = await productModel.find().sort({ createdAt: -1 }).populate("admin", "username email");
         return res.status(200).json({
             message: "Products retrieved successfully",
             products

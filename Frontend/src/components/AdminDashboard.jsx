@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { addProduct, deleteProduct, mapProduct, updateProduct } from '../redux/productsSlice';
 import { api } from '../authStorage';
+import Swal from 'sweetalert2';
 import {
   LayoutDashboard, Package, Users, Plus, Search, Leaf, LogOut, Pencil, Trash2,
   X, ShoppingBasket, Sprout, ChevronRight,
@@ -153,24 +154,52 @@ function AdminDashboard({ user, onSignOut }) {
 
   const removeUser = async (account) => {
     if (account.id === user.id) return;
-    if (!window.confirm(`Delete the account for ${account.name}?`)) return;
+    const confirmation = await Swal.fire({
+      title: 'Delete this account?',
+      text: `The account for ${account.name} will be permanently deleted.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete account',
+      confirmButtonColor: '#b91c1c',
+      cancelButtonColor: '#064e3b',
+    });
+    if (!confirmation.isConfirmed) return;
     try {
       await api.delete(`/auth/users/${account.id}`);
       setUsers((existing) => existing.filter((entry) => entry.id !== account.id));
     } catch (error) {
       console.error('Unable to delete FreshMarket user.', error);
-      window.alert(error.response?.data?.message || 'Could not delete the user.');
+      await Swal.fire({
+        title: 'Could not delete the user',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
     }
   };
 
   const removeProduct = async (product) => {
-    if (!window.confirm(`Delete ${product.title} from the catalog?`)) return;
+    const confirmation = await Swal.fire({
+      title: 'Delete this product?',
+      text: `${product.title} will be permanently removed from the catalog.`,
+      icon: 'warning',
+      showCancelButton: true,
+      confirmButtonText: 'Delete product',
+      confirmButtonColor: '#b91c1c',
+      cancelButtonColor: '#064e3b',
+    });
+    if (!confirmation.isConfirmed) return;
     try {
       await api.delete(`/product/${product.id}`);
       dispatch(deleteProduct(product.id));
     } catch (error) {
       console.error('Unable to delete FreshMarket product.', error);
-      window.alert(error.response?.data?.message || 'Could not delete the product.');
+      await Swal.fire({
+        title: 'Could not delete the product',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
     }
   };
 
