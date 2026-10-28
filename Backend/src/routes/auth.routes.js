@@ -7,7 +7,7 @@ import jwt from "jsonwebtoken"
 import { googleOAuthConfigured } from "../config/googlePassport.js"
 import { authCookieOptions } from "../config/authCookies.js"
 const router = express.Router()
-const frontendUrl = process.env.FRONTEND_URL || "http://localhost:5173"
+const frontendUrl = process.env.FRONTEND_URL || "https://ecommerce-for-backend-r1b2.vercel.app"
 
 function redirectToFrontend(res, authError) {
     const url = new URL(frontendUrl)
