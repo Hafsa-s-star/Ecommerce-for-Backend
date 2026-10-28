@@ -8,6 +8,7 @@ import cors from "cors";
 import session from "express-session";
 import passport from "passport";
 import { googleOAuthConfigured } from "./config/googlePassport.js";
+import connectDB from "./db/db.js";
 
 const app = express();
 app.set("trust proxy", 1);
@@ -43,6 +44,21 @@ app.use(passport.initialize());
 if (!googleOAuthConfigured) {
     console.warn("Google sign-in is disabled. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.");
 }
+
+app.use("/api", async (req, res, next) => {
+    if (req.method === "GET" && req.path === "/auth/google") {
+        return next();
+    }
+    try {
+        await connectDB();
+        return next();
+    } catch (error) {
+        console.error("Database connection failed.", error);
+        return res.status(503).json({
+            message: "The account database is unavailable. Check the backend MONGODB_URI and database network access."
+        });
+    }
+});
 
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
