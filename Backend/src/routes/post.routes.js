@@ -12,7 +12,7 @@ router.post("/create", async (req, res) => {
     }
 
     try {
-        const decoded = jwt.verify(token, "491359b53d557a797597426fb512a328");
+        const decoded = jwt.verify(token, process.env.JWT_SECRET);
         const user = await usersModel.findOne({ _id: decoded.id });
 
         if (!user) {

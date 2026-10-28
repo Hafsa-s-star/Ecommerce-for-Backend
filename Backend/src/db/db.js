@@ -3,7 +3,10 @@
 import mongoose from "mongoose"
 
 async function connectDB() {
-  await mongoose.connect('mongodb+srv://pakistanhafsa_db_user:3BogOY0HJEoADbZV@cluster0.x1nj6a2.mongodb.net/users');
+  if (!process.env.MONGODB_URI) {
+    throw new Error("MONGODB_URI must be set in the backend environment");
+  }
+  await mongoose.connect(process.env.MONGODB_URI);
   console.log("Connected to DB");
   console.log("MongoDB state:", mongoose.connection.readyState);
 }

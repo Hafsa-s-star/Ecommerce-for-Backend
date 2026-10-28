@@ -17,7 +17,17 @@ function App() {
   const { items, selectedCategory, searchQuery } = useSelector((state) => state.products);
   const [user, setUser] = useState(null);
   const [isCheckingSession, setIsCheckingSession] = useState(true);
-  const [authError, setAuthError] = useState('');
+  const [authError, setAuthError] = useState(() => {
+    const currentUrl = new URL(window.location.href);
+    const googleError = currentUrl.searchParams.get('authError');
+    if (!googleError) return '';
+
+    currentUrl.searchParams.delete('authError');
+    window.history.replaceState({}, '', currentUrl);
+    return googleError === 'google_not_configured'
+      ? 'Google sign-in is not configured on the server yet.'
+      : 'Google sign-in could not be completed. Please try again.';
+  });
   const [catalogError, setCatalogError] = useState('');
 
   useEffect(() => {

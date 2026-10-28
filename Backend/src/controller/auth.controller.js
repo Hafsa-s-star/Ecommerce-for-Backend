@@ -2,10 +2,16 @@ import usersModel from "../models/users.model.js";
 import jwt from 'jsonwebtoken';
 import bcrypt from "bcryptjs";
 import mongoose from "mongoose";
+import { authCookieOptions } from "../config/authCookies.js";
 
 async function registerUser(req, res) {
     try {
-        const { username, email, password, role } = req.body;
+        const username = typeof req.body.username === "string" ? req.body.username.trim() : "";
+        const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+        const password = req.body.password;
+        if (!username || !email || typeof password !== "string" || password.length < 8) {
+            return res.status(400).json({ message: "Username, email, and a password of at least 8 characters are required" });
+        }
         const userAlreadyExists = await usersModel.findOne({
             $or: [
                 { username },
@@ -18,15 +24,18 @@ async function registerUser(req, res) {
 
         const hash = await bcrypt.hash(password, 12)
 
-        const user = await usersModel.create({ username, email, password: hash, role })
+        const user = await usersModel.create({ username, email, password: hash, role: "user" })
         const token = jwt.sign({
             id: user._id,
             role: user.role
-        }, "491359b53d557a797597426fb512a328")
+        }, process.env.JWT_SECRET)
 
-        res.cookie("token", token)
+        res.cookie("token", token, authCookieOptions)
 
-        res.status(201).json({ message: "User Created Sucessfully", user, token })
+        res.status(201).json({
+            message: "User Created Successfully",
+            user: { id: user._id, username: user.username, email: user.email, role: user.role }
+        })
     } catch (error) {
         console.log(error);
         res.status(500).json({ message: "Internal Server error" })
@@ -34,13 +43,16 @@ async function registerUser(req, res) {
 }
 
 async function loginUser(req, res) {
-    const { username, email, password } = req.body;
-    const user = await usersModel.findOne({
-        $or: [
-            { username },
-            { email }
-        ]
-    })
+    const { username, password } = req.body;
+    const email = typeof req.body.email === "string" ? req.body.email.trim().toLowerCase() : "";
+    const normalizedUsername = typeof username === "string" ? username.trim() : "";
+    if ((!normalizedUsername && !email) || typeof password !== "string" || !password) {
+        return res.status(400).json({ message: "Username or email and password are required" });
+    }
+    const identifiers = [];
+    if (normalizedUsername) identifiers.push({ username: normalizedUsername });
+    if (email) identifiers.push({ email });
+    const user = await usersModel.findOne({ $or: identifiers });
 
     if (!user) {
         return res.status(404).json({
@@ -48,19 +60,17 @@ async function loginUser(req, res) {
         })
     }
 
-    const isPasswordValid = await bcrypt.compare(password, user.password);
+    const isPasswordValid = user.password && await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
         return res.status(401).json({ message: "Invalid Password" })
     }
 
-    console.log(user)
-
     const token = jwt.sign({
         id: user._id,
         role: user.role
-    }, "491359b53d557a797597426fb512a328")
+    }, process.env.JWT_SECRET)
 
-    res.cookie("token", token)
+    res.cookie("token", token, authCookieOptions)
     return res.status(200).json({
         message: "Login successful",
         user: {

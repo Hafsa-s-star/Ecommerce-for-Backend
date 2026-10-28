@@ -8,7 +8,7 @@ export function authenticateToken(req, res, next) {
     }
 
     try {
-        req.user = jwt.verify(token, "491359b53d557a797597426fb512a328");
+        req.user = jwt.verify(token, process.env.JWT_SECRET);
 
         // if (req.user.role !== "admin") {
         //     return res.status(403).json({ message: "Forbidden" });

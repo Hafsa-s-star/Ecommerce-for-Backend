@@ -5,11 +5,22 @@ import cartRoutes from "./routes/cart.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+import session from "express-session";
+import passport from "passport";
+import { googleOAuthConfigured } from "./config/googlePassport.js";
 
 const app = express();
+app.set("trust proxy", 1);
+if (!process.env.SESSION_SECRET) {
+    throw new Error("SESSION_SECRET must be set in the backend environment");
+}
+if (!process.env.JWT_SECRET) {
+    throw new Error("JWT_SECRET must be set in the backend environment");
+}
 
 const allowedOrigins = [
-    // process.env.FRONTEND_URL,
+    "https://ecommerce-for-backend-r1b2.vercel.app",
+    "https://ecommerce-for-backend-r1b2-g9tzim684-hafsa-a943.vercel.app",
     "http://localhost:5173",
     "http://127.0.0.1:5173"
 ].filter(Boolean);
@@ -17,6 +28,21 @@ const allowedOrigins = [
 app.use(cors({ origin: allowedOrigins, credentials: true }));
 app.use(express.json());
 app.use(cookieParser());
+app.use(session({
+    secret: process.env.SESSION_SECRET,
+    resave: false,
+    saveUninitialized: false,
+    cookie: {
+        httpOnly: true,
+        sameSite: "lax",
+        secure: process.env.NODE_ENV === "production"
+    }
+}));
+app.use(passport.initialize());
+
+if (!googleOAuthConfigured) {
+    console.warn("Google sign-in is disabled. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.");
+}
 
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);

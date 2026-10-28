@@ -202,6 +202,48 @@
   cursor: wait;
 }
 
+.auth-divider {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  margin: 18px 0 12px;
+  color: #87938b;
+  font-size: 11px;
+}
+
+.auth-divider::before,
+.auth-divider::after {
+  height: 1px;
+  flex: 1;
+  background: #e8ede7;
+  content: '';
+}
+
+.google-sign-in {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 11px;
+  border: 1px solid #dfe7df;
+  border-radius: 10px;
+  color: #334d3e;
+  font-size: 13px;
+  font-weight: 700;
+  text-decoration: none;
+  transition: background .15s, border-color .15s;
+}
+
+.google-sign-in:hover {
+  border-color: #b7c8ba;
+  background: #f8faf7;
+}
+
+.google-sign-in svg {
+  width: 18px;
+  height: 18px;
+}
+
 .auth-error,
 .admin-form-error {
   margin: -4px 0 0;
