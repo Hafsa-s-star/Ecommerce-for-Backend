@@ -1,4 +1,5 @@
 import express from "express";
+import helmet from "helmet";
 import authRoutes from "./routes/auth.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
@@ -12,6 +13,7 @@ import connectDB from "./db/db.js";
 
 const app = express();
 app.set("trust proxy", 1);
+app.use(helmet());
 if (!process.env.SESSION_SECRET) {
     throw new Error("SESSION_SECRET must be set in the backend environment");
 }
