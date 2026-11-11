@@ -784,6 +784,141 @@
   text-align: center;
 }
 
+.admin-order-list {
+  display: grid;
+  gap: 14px;
+}
+
+.admin-order-card {
+  padding: 18px 20px;
+}
+
+.admin-order-header,
+.admin-order-footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+}
+
+.admin-order-header {
+  padding-bottom: 14px;
+  border-bottom: 1px solid #edf0ec;
+}
+
+.admin-order-header h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 5px;
+  color: #294435;
+  font-size: 13px;
+}
+
+.admin-order-header p,
+.admin-order-customer span {
+  margin: 0;
+  color: #8a978e;
+  font-size: 10px;
+}
+
+.admin-order-customer {
+  display: grid;
+  gap: 4px;
+  text-align: right;
+}
+
+.admin-order-customer strong {
+  color: #30463a;
+  font-size: 11px;
+}
+
+.order-status {
+  padding: 4px 8px;
+  border-radius: 99px;
+  background: #fff5dc;
+  color: #9b741f;
+  font-size: 9px;
+  font-weight: 750;
+  text-transform: capitalize;
+}
+
+.order-status.approved {
+  background: #eaf5ec;
+  color: #26734b;
+}
+
+.admin-order-items {
+  padding: 4px 0;
+}
+
+.admin-order-item {
+  display: flex;
+  min-height: 57px;
+  align-items: center;
+  gap: 11px;
+  border-bottom: 1px solid #f0f2ef;
+}
+
+.admin-order-item:last-child {
+  border-bottom: 0;
+}
+
+.admin-order-item > img {
+  width: 36px;
+  height: 36px;
+  flex: 0 0 auto;
+  border-radius: 8px;
+  background: #f1f5ef;
+  object-fit: cover;
+}
+
+.admin-order-item-name {
+  display: grid;
+  flex: 1;
+  gap: 4px;
+  min-width: 0;
+}
+
+.admin-order-item-name strong {
+  overflow: hidden;
+  color: #30463a;
+  font-size: 11px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.admin-order-item-name span {
+  color: #8a978e;
+  font-size: 10px;
+}
+
+.admin-order-footer {
+  padding-top: 13px;
+  border-top: 1px solid #edf0ec;
+}
+
+.admin-order-footer > div {
+  display: grid;
+  gap: 4px;
+}
+
+.admin-order-footer > div span {
+  color: #8a978e;
+  font-size: 10px;
+}
+
+.admin-order-footer > div strong {
+  color: #173d2b;
+  font-size: 17px;
+}
+
+.order-approved-note {
+  color: #26734b;
+  font-size: 11px;
+  font-weight: 700;
+}
+
 .admin-modal-backdrop {
   position: fixed;
   inset: 0;
@@ -1191,6 +1326,19 @@
   .admin-table td {
     padding-right: 12px;
     padding-left: 12px;
+  }
+
+  .admin-order-card {
+    padding: 15px;
+  }
+
+  .admin-order-header {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+
+  .admin-order-customer {
+    text-align: left;
   }
 
   .admin-form-grid {

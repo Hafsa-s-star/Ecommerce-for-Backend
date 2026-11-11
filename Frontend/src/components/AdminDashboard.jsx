@@ -5,7 +5,7 @@ import { api } from '../authStorage';
 import Swal from 'sweetalert2';
 import {
   LayoutDashboard, Package, Users, Plus, Search, Leaf, LogOut, Pencil, Trash2,
-  X, ShoppingBasket, Sprout, ChevronRight,
+  X, ShoppingBasket, Sprout, ChevronRight, ClipboardList, Check,
 } from 'lucide-react';
 
 const CATEGORIES = ['Fruits', 'Vegetables', 'Dairy & Eggs', 'Bakery', 'Pantry'];
@@ -28,6 +28,9 @@ function AdminDashboard({ user, onSignOut }) {
   const [query, setQuery] = useState('');
   const [users, setUsers] = useState([]);
   const [usersError, setUsersError] = useState('');
+  const [orders, setOrders] = useState([]);
+  const [ordersError, setOrdersError] = useState('');
+  const [ordersLoading, setOrdersLoading] = useState(true);
   const [modal, setModal] = useState(null);
   const [form, setForm] = useState({});
   const [formError, setFormError] = useState('');
@@ -55,6 +58,28 @@ function AdminDashboard({ user, onSignOut }) {
       isCurrent = false;
     };
   }, []);
+
+  useEffect(() => {
+    if (activeTab !== 'orders') return undefined;
+    let isCurrent = true;
+    api.get('/orders/admin')
+      .then(({ data }) => {
+        if (isCurrent) {
+          setOrders(data.orders || []);
+          setOrdersError('');
+        }
+      })
+      .catch((error) => {
+        console.error('Unable to load FreshMarket orders.', error);
+        if (isCurrent) setOrdersError(error.response?.data?.message || 'Orders could not be loaded.');
+      })
+      .finally(() => {
+        if (isCurrent) setOrdersLoading(false);
+      });
+    return () => {
+      isCurrent = false;
+    };
+  }, [activeTab]);
 
   const customers = users.filter((account) => account.role !== 'admin');
   const visibleProducts = useMemo(() => products.filter((product) => (
@@ -203,9 +228,35 @@ function AdminDashboard({ user, onSignOut }) {
     }
   };
 
+  const approveOrder = async (order) => {
+    const confirmation = await Swal.fire({
+      title: 'Approve this order?',
+      text: `Approve the $${Number(order.total).toFixed(2)} order from ${order.customer.name}?`,
+      icon: 'question',
+      showCancelButton: true,
+      confirmButtonText: 'Approve order',
+      confirmButtonColor: '#064e3b',
+      cancelButtonColor: '#64748b',
+    });
+    if (!confirmation.isConfirmed) return;
+    try {
+      const { data } = await api.patch(`/orders/${order._id}/approve`);
+      setOrders((existing) => existing.map((entry) => entry._id === order._id ? data.order : entry));
+    } catch (error) {
+      console.error('Unable to approve FreshMarket order.', error);
+      await Swal.fire({
+        title: 'Could not approve order',
+        text: error.response?.data?.message || 'Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    }
+  };
+
   const navItems = [
     { id: 'overview', label: 'Overview', icon: LayoutDashboard },
     { id: 'products', label: 'Products', icon: Package },
+    { id: 'orders', label: 'Orders', icon: ClipboardList },
     { id: 'users', label: 'Users', icon: Users },
   ];
 
@@ -274,6 +325,51 @@ function AdminDashboard({ user, onSignOut }) {
                   {visibleProducts.map((product) => <tr key={product.id}><td><div className="table-product"><img src={product.image} alt="" /><span><strong>{product.title}</strong><small>{product.unit}</small></span></div></td><td><span className="category-pill">{product.category}</span></td><td className="table-price">{Number.isFinite(product.price) ? `$${product.price.toFixed(2)}` : 'Price pending'}</td><td>{product.rating} / 5</td><td><div className="table-actions"><button aria-label={`Edit ${product.title}`} onClick={() => openProductForm(product)}><Pencil size={16} /></button><button className="delete-action" aria-label={`Delete ${product.title}`} onClick={() => removeProduct(product)}><Trash2 size={16} /></button></div></td></tr>)}
                 </tbody></table>{visibleProducts.length === 0 && <p className="admin-empty">No products match your search.</p>}</div>
               </div>
+            </>
+          )}
+
+          {activeTab === 'orders' && (
+            <>
+              <div className="admin-page-heading">
+                <div><span className="admin-eyebrow">CUSTOMER CHECKOUTS</span><h1>Orders</h1><p>Review itemized customer orders and approve pending requests.</p></div>
+              </div>
+              {ordersError && <p className="admin-form-error mb-4" role="alert">{ordersError}</p>}
+              {ordersLoading ? (
+                <div className="admin-panel"><p className="admin-empty">Loading orders…</p></div>
+              ) : orders.length === 0 && !ordersError ? (
+                <div className="admin-panel"><p className="admin-empty">No customer orders have been placed yet.</p></div>
+              ) : (
+                <div className="admin-order-list">
+                  {orders.map((order) => (
+                    <section className="admin-panel admin-order-card" key={order._id}>
+                      <header className="admin-order-header">
+                        <div>
+                          <h2>Order #{order._id.slice(-8).toUpperCase()} <span className={`order-status ${order.status}`}>{order.status}</span></h2>
+                          <p>Placed {new Date(order.createdAt).toLocaleString()}</p>
+                        </div>
+                        <div className="admin-order-customer"><strong>{order.customer.name}</strong><span>{order.customer.email}</span></div>
+                      </header>
+                      <div className="admin-order-items">
+                        {order.items.map((item, index) => (
+                          <div className="admin-order-item" key={`${order._id}-${item.product || item.name}-${index}`}>
+                            {item.image && <img src={item.image} alt="" />}
+                            <div className="admin-order-item-name"><strong>{item.name}</strong><span>{item.quantity} × ${Number(item.price).toFixed(2)} / {item.unit}</span></div>
+                            <strong className="admin-product-price">${Number(item.lineTotal).toFixed(2)}</strong>
+                          </div>
+                        ))}
+                      </div>
+                      <footer className="admin-order-footer">
+                        <div><span>Order total</span><strong>${Number(order.total).toFixed(2)}</strong></div>
+                        {order.status === 'pending' ? (
+                          <button className="admin-primary-button" onClick={() => approveOrder(order)}><Check size={16} /> Approve order</button>
+                        ) : (
+                          <span className="order-approved-note">Approved{order.approvedAt ? ` ${new Date(order.approvedAt).toLocaleDateString()}` : ''}</span>
+                        )}
+                      </footer>
+                    </section>
+                  ))}
+                </div>
+              )}
             </>
           )}
 

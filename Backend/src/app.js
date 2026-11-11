@@ -3,6 +3,7 @@ import helmet from "helmet";
 import authRoutes from "./routes/auth.routes.js";
 import postRoutes from "./routes/post.routes.js";
 import cartRoutes from "./routes/cart.routes.js";
+import orderRoutes from "./routes/order.routes.js";
 import productRoutes from "./routes/product.routes.js";
 import cookieParser from "cookie-parser";
 import cors from "cors";
@@ -66,5 +67,6 @@ app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
 app.use("/api/product", productRoutes);
 app.use("/api/cart", cartRoutes);
+app.use("/api/orders", orderRoutes);
 
 export default app;

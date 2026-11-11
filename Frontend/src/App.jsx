@@ -40,7 +40,7 @@ function App() {
         clearSession();
         if (error.response?.status !== 401) {
           console.error('Unable to verify the FreshMarket session.', error);
-          if (isCurrent) setAuthError('Could not connect to the account service. Check that the backend is running.');
+          if (isCurrent) setAuthError(error.response?.data?.message || 'Could not connect to the account service. Check that the backend is running.');
         }
       })
       .finally(() => {

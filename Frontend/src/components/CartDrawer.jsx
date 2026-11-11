@@ -1,3 +1,4 @@
+import { useState } from 'react';
 import { useSelector, useDispatch } from 'react-redux';
 import { setCartOpen, setCartItems, mapCartItems } from '../redux/cartSlice';
 import { X, Trash2, Plus, Minus, ShoppingBasket, ArrowRight, ShieldCheck } from 'lucide-react';
@@ -7,6 +8,7 @@ import { api } from '../authStorage';
 const CartDrawer = () => {
   const dispatch = useDispatch();
   const { items, isCartOpen } = useSelector((state) => state.cart);
+  const [isSubmittingOrder, setIsSubmittingOrder] = useState(false);
 
   const subtotal = items.reduce((sum, item) => sum + (item.price || 0) * item.quantity, 0);
 
@@ -40,27 +42,44 @@ const CartDrawer = () => {
     }
   };
 
-  const clearBasket = async (confirmCheckout = false) => {
+  const clearBasket = async () => {
     try {
       await api.delete('/cart/clear');
       dispatch(setCartItems([]));
-      if (confirmCheckout) {
-        dispatch(setCartOpen(false));
-        await Swal.fire({
-          title: 'Basket checked out',
-          text: 'Your basket has been cleared successfully.',
-          icon: 'success',
-          confirmButtonColor: '#064e3b',
-        });
-      }
     } catch (error) {
       console.error('Unable to clear the FreshMarket cart.', error);
       await Swal.fire({
-        title: 'Checkout unavailable',
+        title: 'Could not clear basket',
         text: error.response?.data?.message || 'Your basket could not be cleared. Please try again.',
         icon: 'error',
         confirmButtonColor: '#064e3b',
       });
+    }
+  };
+
+  const submitOrder = async () => {
+    if (isSubmittingOrder) return;
+    setIsSubmittingOrder(true);
+    try {
+      const { data } = await api.post('/orders');
+      dispatch(setCartItems([]));
+      dispatch(setCartOpen(false));
+      await Swal.fire({
+        title: 'Order sent for approval',
+        text: `Your order totaling $${Number(data.order.total).toFixed(2)} has been sent to the store admin.`,
+        icon: 'success',
+        confirmButtonColor: '#064e3b',
+      });
+    } catch (error) {
+      console.error('Unable to submit the FreshMarket order.', error);
+      await Swal.fire({
+        title: 'Checkout unavailable',
+        text: error.response?.data?.message || 'Your order could not be submitted. Please try again.',
+        icon: 'error',
+        confirmButtonColor: '#064e3b',
+      });
+    } finally {
+      setIsSubmittingOrder(false);
     }
   };
 
@@ -173,10 +192,11 @@ const CartDrawer = () => {
                 Clear
               </button>
               <button
-                onClick={() => clearBasket(true)}
+                onClick={submitOrder}
+                disabled={isSubmittingOrder}
                 className="flex-1 py-3 px-4 bg-emerald-900 hover:bg-emerald-800 text-amber-400 rounded-2xl text-xs font-bold flex items-center justify-center gap-2 shadow-lg shadow-emerald-900/20 active:scale-95 transition"
               >
-                Proceed to Checkout <ArrowRight className="w-4 h-4 text-amber-400" />
+                {isSubmittingOrder ? 'Submitting order…' : 'Proceed to Checkout'} <ArrowRight className="w-4 h-4 text-amber-400" />
               </button>
             </div>
           </div>
