@@ -67,6 +67,13 @@ app.use("/api", async (req, res, next) => {
     }
 });
 
+app.get("/api/health", (req, res) => {
+    res.status(200).json({
+        success: true,
+        message: "API routing is working!"
+    });
+});
+
 app.use("/api/auth", authRoutes);
 app.use("/api/post", postRoutes);
 app.use("/api/product", productRoutes);
