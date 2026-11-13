@@ -48,6 +48,10 @@ if (!googleOAuthConfigured) {
     console.warn("Google sign-in is disabled. Set GOOGLE_CLIENT_ID and GOOGLE_CLIENT_SECRET to enable it.");
 }
 
+app.get("/", (req, res) => {
+    res.send("Backend is running successfully!");
+});
+
 app.use("/api", async (req, res, next) => {
     if (req.method === "GET" && req.path === "/auth/google") {
         return next();
